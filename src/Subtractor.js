@@ -6,9 +6,44 @@ class Subtractor {
     const osc1 = new Osc()  // unused atm
     this.context = new AudioContext()
 
-    this.octave = 5.1   // floats work for this which is cool
-    this.polyphony = 3  // integer between 1 and 10
-    this.detune = 2     // float, between 0 and 1 is a half-step
+    this.amplifier = this.context.createGain()
+    this.filter = this.context.createBiquadFilter()
+    this.lfo = this.context.createOscillator()
+
+    this.amplifier.connect(this.context.destination)
+    this.filter.connect(this.amplifier)
+    this.lfo.connect(this.amplifier.gain)
+    
+
+    const presets = {
+      harmonic: [
+        5.1, 3, 2,
+        'lowpass', 1000, 5,
+        'triangle', 1,
+      ],
+      full:     [
+        4.5, 5, .2,
+        'lowpass', 1000, 5,
+        'triangle', 4,
+      ],
+      simple:     [
+        5, 1, 0,
+        'lowpass', 1200, 5,
+        'sine', 2,
+      ],
+    }
+    this.selectedPreset = presets.simple 
+    this.octave    = this.selectedPreset[0]  // floats work for this which is cool because you can change the key
+    this.polyphony = this.selectedPreset[1]  // integer between 1 and 10
+    this.detune    = this.selectedPreset[2]  // float, between 0 and 1 is a half-step
+
+    this.filter.type = this.selectedPreset[3]
+    this.filter.frequency.value = this.selectedPreset[4]
+    this.filter.Q.value = this.selectedPreset[5]
+
+    this.lfo.start()
+    this.lfo.type = this.selectedPreset[6] 
+    this.lfo.frequency.value = this.selectedPreset[7]
 
     this.handleKeys()
   }
@@ -29,7 +64,12 @@ class Subtractor {
         ['h', 9],
         ['u', 10],
         ['j', 11],
-        ['k', 12]
+        ['k', 12],
+        ['o', 13],
+        ['l', 14],
+        ['p', 15],
+        [';', 16],
+        ['\'', 17],
       ])
       if (octaveKeys.has(eKeyDown.key) && !keyWasPressed[eKeyDown.key]) {
         const note = octaveKeys.get(eKeyDown.key) + (this.octave * 12)
@@ -80,7 +120,7 @@ class Subtractor {
     const oscillator = this.context.createOscillator()
     oscillator.type = 'sawtooth';
     oscillator.frequency.value = freq;
-    oscillator.connect(this.context.destination);
+    oscillator.connect(this.filter);
     oscillator.start();
     return oscillator
   }
